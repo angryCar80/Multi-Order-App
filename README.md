@@ -1,0 +1,27 @@
+# Productivity App
+
+### Why Am making this:
+Cause Why not.
+but the main reason is that zig is very fast and good, and i am a really big fan of it
+am not using any zig libs (cause i don't know how to use zig libs) and i dont want to use some c libs
+cause using C libs gives you that you are writing in C but with some new syntax
+So using only zig
+
+
+### to use the app you should:
+#### Download the repo:
+```
+git clone https://github.com/angryCar80/Multi-Order-App.git
+```
+#### get into the directory
+You can change the files freely cause the app is under the MIT licenes
+and to run it use the
+```
+zig build run
+```
+
+### LICENSE:
+MIT LICENSES OFC
+Here is the LICENSE file
+== LICENSE.md == 
+

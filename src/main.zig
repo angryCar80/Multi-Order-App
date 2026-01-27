@@ -148,6 +148,9 @@ pub fn main() !void {
                 const input = try stdin.takeDelimiterExclusive('\n');
                 if (std.mem.eql(u8, input, "exit")) {
                     break;
+                } else if (std.mem.eql(u8, input, "whoami")) {
+                    try stdout.print("You are: {s}\n", .{user.name});
+                    try stdout.flush();
                 } else if (std.mem.eql(u8, input, "help")) {
                     try stdout.print("I Dont Know What I Should Do Here\n", .{});
                     try stdout.flush();
