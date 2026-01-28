@@ -115,16 +115,6 @@ pub fn printColored(text: []const u8, fg: Color, bg: ?Color) !void {
     }
 }
 
-// USING COLOR TO PRINT STUFF
-pub fn printMenuItem(text: []const u8, selected: bool) !void {
-    if (selected) {
-        try printColored("> ", theme.primary, null);
-        try printColored(text, theme.text, theme.primary);
-    } else {
-        try stdout.print("  {s}", .{text});
-    }
-}
-
 // RAW MODE HANDELING
 pub fn setRawMode(state: enum(u1) { on, off }) !void {
     var termios = try std.posix.tcgetattr(0);
@@ -134,8 +124,9 @@ pub fn setRawMode(state: enum(u1) { on, off }) !void {
 }
 
 // READING KEYS (STDIN)
+
 pub fn readKey() !u8 {
-    const bytes_read: u8 = try stdin.takeByte();
+    const bytes_read = try stdin.takeByte();
     if (bytes_read == 0) return error.EndOfFile;
     return bytes_read;
 }
