@@ -1,116 +1,24 @@
 const std = @import("std");
+const root = @import("root.zig");
+const print = root.printColored;
+const clear = root.clear;
+const setRawMode = root.setRawMode;
+const readKey = root.readKey;
+const theme = root.theme;
+
 const tasks = @import("tasks.zig");
 
-var stdout_buffer: [1024]u8 = undefined;
-var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
-const stdout = &stdout_writer.interface;
-
-var stdin_buffer: [1024]u8 = undefined;
-var stdin_reader = std.fs.File.stdin().reader(&stdin_buffer);
-const stdin = &stdin_reader.interface;
-
-const Color = enum {
-    // Standard colors
-    black,
-    red,
-    green,
-    yellow,
-    blue,
-    magenta,
-    cyan,
-    white,
-    // Bright colors
-    bright_black,
-    bright_red,
-    bright_green,
-    bright_yellow,
-    bright_blue,
-    bright_magenta,
-    bright_cyan,
-    bright_white,
-    reset,
-
-    pub fn fg(self: Color) []const u8 {
-        return switch (self) {
-            .black => "\x1b[30m",
-            .red => "\x1b[31m",
-            .green => "\x1b[32m",
-            .yellow => "\x1b[33m",
-            .blue => "\x1b[34m",
-            .magenta => "\x1b[35m",
-            .cyan => "\x1b[36m",
-            .white => "\x1b[37m",
-            .bright_black => "\x1b[90m",
-            .bright_red => "\x1b[91m",
-            .bright_green => "\x1b[92m",
-            .bright_yellow => "\x1b[93m",
-            .bright_blue => "\x1b[94m",
-            .bright_magenta => "\x1b[95m",
-            .bright_cyan => "\x1b[96m",
-            .bright_white => "\x1b[97m",
-            .reset => "\x1b[0m",
-        };
-    }
-
-    pub fn bg(self: Color) []const u8 {
-        return switch (self) {
-            .black => "\x1b[40m",
-            .red => "\x1b[41m",
-            .green => "\x1b[42m",
-            .yellow => "\x1b[43m",
-            .blue => "\x1b[44m",
-            .magenta => "\x1b[45m",
-            .cyan => "\x1b[46m",
-            .white => "\x1b[47m",
-            .bright_black => "\x1b[100m",
-            .bright_red => "\x1b[101m",
-            .bright_green => "\x1b[102m",
-            .bright_yellow => "\x1b[103m",
-            .bright_blue => "\x1b[104m",
-            .bright_magenta => "\x1b[105m",
-            .bright_cyan => "\x1b[106m",
-            .bright_white => "\x1b[107m",
-            .reset => "\x1b[0m",
-        };
-    }
-};
-
-const Theme = struct {
-    primary: Color,
-    secondary: Color,
-    accent: Color,
-    success: Color,
-    warning: Color,
-    error_color: Color,
-    background: Color,
-    surface: Color,
-    text: Color,
-    text_dim: Color,
-
-    pub fn init() Theme {
-        return Theme{
-            .primary = Color.blue,
-            .secondary = Color.cyan,
-            .accent = Color.bright_magenta,
-            .success = Color.green,
-            .warning = Color.yellow,
-            .error_color = Color.red,
-            .background = Color.black,
-            .surface = Color.bright_black,
-            .text = Color.white,
-            .text_dim = Color.bright_white,
-        };
-    }
-};
-
 const userstate = enum {
-    NOTING,
-    IDLE,
-    INPUTING,
+    // NOT USING ANY APPS
+    IDLE, // used if the user is not doing anything
+    INPUTING, // used if the user is in the app shell
+    // APPS STATUS
+    TODO, // used if the user is in the todo app
+    NOTE, // used if the user is in the note app
+    DATE, // used if the user is in the date app
 };
 
 // Global theme instance
-const theme = Theme.init();
 
 // TODO How to save settings in a file using zig (js*n)
 const User = struct {
@@ -119,57 +27,16 @@ const User = struct {
     firstTime: bool,
 };
 
-// Clearing screen
-fn clear() !void {
-    try stdout.print("\x1b[2J\x1b[H", .{});
-    try stdout.flush();
-}
-// Raw Mode Thing
-fn setRawMode(state: enum(u1) { on, off }) !void {
-    var termios = try std.posix.tcgetattr(0);
-    termios.lflag.ECHO = state != .on;
-    termios.lflag.ICANON = state != .on;
-    try std.posix.tcsetattr(0, .FLUSH, termios);
-}
-
-fn readKey() !u8 {
-    const bytes_read: u8 = try stdin.takeByte();
-    if (bytes_read == 0) return error.EndOfFile;
-    return bytes_read;
-}
-
-fn readArrowKey() !?[]const u8 {
-    const first_byte = try readKey();
-    if (first_byte != '\x1B') return null;
-
-    const second_byte = try readKey();
-    if (second_byte != '[') return null;
-
-    const third_byte = try readKey();
-    return switch (third_byte) {
-        'A' => "up",
-        'B' => "down",
-        else => null,
-    };
-}
-
 // Color utility functions
-fn printColored(text: []const u8, fg: Color, bg: ?Color) !void {
-    if (bg) |background| {
-        try stdout.print("{s}{s}{s}{s}", .{ background.bg(), fg.fg(), text, Color.reset.fg() });
-    } else {
-        try stdout.print("{s}{s}{s}", .{ fg.fg(), text, Color.reset.fg() });
-    }
-}
-
 fn printMenuItem(text: []const u8, selected: bool) !void {
     if (selected) {
-        try printColored("> ", theme.primary, null);
-        try printColored(text, theme.text, theme.primary);
+        try print("> ", theme.primary, null);
+        try print(text, theme.text, theme.primary);
     } else {
-        try stdout.print("  {s}", .{text});
+        try root.stdout.print("  {s}", .{text});
     }
 }
+
 pub fn main() !void {
     try setRawMode(.on);
 
@@ -191,21 +58,31 @@ pub fn main() !void {
                     try clear();
 
                     // Display menu title
-                    try printColored("╭─────────────────╮\n", theme.primary, null);
-                    try printColored("│    MAIN MENU    │\n", theme.primary, null);
-                    try printColored("╰─────────────────╯\n\n", theme.primary, null);
+                    try print("╭─────────────────╮\n", theme.primary, null);
+                    try print("│    MAIN MENU    │\n", theme.primary, null);
+                    try print("╰─────────────────╯\n\n", theme.primary, null);
 
                     // Display menu items with colors
                     for (options, 0..options.len) |o, i| {
                         try printMenuItem(o, i == current_option);
-                        try stdout.print("\n", .{});
+                        try root.stdout.print("\n", .{});
                     }
-                    try stdout.flush();
+                    try root.stdout.flush();
 
                     // Read input
                     const first_byte = try readKey();
 
-                    if (first_byte == '\x1B') {
+                    if (first_byte == 'k') {
+                        // vim: k = up (decrease index)
+                        if (current_option > 0) {
+                            current_option -= 1;
+                        }
+                    } else if (first_byte == 'j') {
+                        // vim: j = down (increase index)
+                        if (current_option < options.len - 1) {
+                            current_option += 1;
+                        }
+                    } else if (first_byte == '\x1B') {
                         // Read the next two bytes for arrow sequence
                         const second_byte = try readKey();
                         if (second_byte == '[') {
@@ -229,21 +106,21 @@ pub fn main() !void {
                     } else if (first_byte == '\r' or first_byte == '\n') {
                         if (current_option == 0) {
                             current_option = 0;
-                            try printColored("✓ Opening Note App...\n", theme.success, null);
-                            try stdout.flush();
+                            try print("✓ Opening Note App...\n", theme.success, null);
+                            try root.stdout.flush();
                             std.Thread.sleep(1000 * std.time.ns_per_ms);
                             try tasks.runTodoApp();
                             try clear();
                         } else if (current_option == 1) {
                             current_option = 0;
-                            try printColored("✓ Opening Todo App...\n", theme.success, null);
-                            try stdout.flush();
+                            try print("✓ Opening Todo App...\n", theme.success, null);
+                            try root.stdout.flush();
                             std.Thread.sleep(1000 * std.time.ns_per_ms);
                             try clear();
                         } else if (current_option == 4) { // last element (EXIT)
                             current_option = 0;
-                            try printColored("✓ Exiting application...\n", theme.warning, null);
-                            try stdout.flush();
+                            try print("✓ Exiting application...\n", theme.warning, null);
+                            try root.stdout.flush();
                             std.Thread.sleep(500 * std.time.ns_per_ms);
                             try clear();
                             break;
@@ -255,51 +132,52 @@ pub fn main() !void {
             } else if (key == 'i') {
                 user.currentState = userstate.INPUTING;
                 if (user.firstTime) {
-                    try printColored("╭─────────────────────╮\n", theme.accent, null);
-                    try printColored("│    COMMAND MODE     │\n", theme.accent, null);
-                    try printColored("╰─────────────────────╯\n\n", theme.accent, null);
-                    try printColored("Type 'help' for available commands\n", theme.text_dim, null);
-                    try stdout.flush();
+                    try print("╭─────────────────────╮\n", theme.accent, null);
+                    try print("│    COMMAND MODE     │\n", theme.accent, null);
+                    try print("╰─────────────────────╯\n\n", theme.accent, null);
+                    try print("Type 'help' for available commands\n", theme.text_dim, null);
+                    try root.stdout.flush();
+                    user.firstTime = false;
                 } else if (!user.firstTime) {
                     continue;
                 }
-                try printColored("> ", theme.secondary, null);
-                try stdout.flush();
+                try print("> ", theme.secondary, null);
+                try root.stdout.flush();
                 try setRawMode(.off);
-                const input = try stdin.takeDelimiterExclusive('\n');
+                const input = try root.stdin.takeDelimiterExclusive('\n');
                 if (std.mem.eql(u8, input, "exit")) {
-                    try printColored("✓ Exiting command mode\n", theme.success, null);
-                    try stdout.flush();
+                    try print("✓ Exiting command mode\n", theme.success, null);
+                    try root.stdout.flush();
                 } else if (std.mem.eql(u8, input, "whoami")) {
-                    try printColored("User: ", theme.accent, null);
-                    try stdout.print("{s}\n", .{user.name});
-                    try stdout.flush();
+                    try print("User: ", theme.accent, null);
+                    try root.stdout.print("{s}\n", .{user.name});
+                    try root.stdout.flush();
                 } else if (std.mem.eql(u8, input, "help")) {
-                    try printColored("Available commands:\n", theme.accent, null);
-                    try printColored("  whoami - Show current user\n", theme.text_dim, null);
-                    try printColored("  exit   - Exit command mode\n", theme.text_dim, null);
-                    try printColored("  help   - Show this help\n", theme.text_dim, null);
-                    try stdout.flush();
+                    try print("Available commands:\n", theme.accent, null);
+                    try print("  whoami - Show current user\n", theme.text_dim, null);
+                    try print("  exit   - Exit command mode\n", theme.text_dim, null);
+                    try print("  help   - Show this help\n", theme.text_dim, null);
+                    try root.stdout.flush();
                 } else {
-                    try printColored("Unknown command: ", theme.error_color, null);
-                    try printColored("{s}\n", theme.text, null);
-                    try stdout.flush();
+                    try print("Unknown command: ", theme.error_color, null);
+                    try print("{s}\n", theme.text, null);
+                    try root.stdout.flush();
                 }
 
                 try setRawMode(.on);
             } else if (key == 'h') {
-                try printColored("Available Commands:\n", theme.accent, null);
-                try printColored("  C  - Clear screen\n", theme.text_dim, null);
-                try printColored("  i  - Open command shell\n", theme.text_dim, null);
-                try printColored("  o  - Open selection menu\n", theme.text_dim, null);
-                try printColored("  h  - Show this help\n", theme.text_dim, null);
-                try printColored("  q  - Quit application\n", theme.text_dim, null);
-                try stdout.flush();
+                try print("Available Commands:\n", theme.accent, null);
+                try print("  C  - Clear screen\n", theme.text_dim, null);
+                try print("  i  - Open command shell\n", theme.text_dim, null);
+                try print("  o  - Open selection menu\n", theme.text_dim, null);
+                try print("  h  - Show this help\n", theme.text_dim, null);
+                try print("  q  - Quit application\n", theme.text_dim, null);
+                try root.stdout.flush();
             } else if (key == 'q') {
                 running = false;
             } else {
-                // try stdout.print("You Pressed: {d}", .{key});
-                try stdout.flush();
+                // try root.stdout.print("You Pressed: {d}", .{key});
+                try root.stdout.flush();
             }
         }
     }

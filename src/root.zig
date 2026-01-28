@@ -3,11 +3,11 @@ const std = @import("std");
 
 var stdout_buffer: [1024]u8 = undefined;
 var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
-const stdout = &stdout_writer.interface;
+pub const stdout = &stdout_writer.interface;
 
 var stdin_buffer: [1024]u8 = undefined;
 var stdin_reader = std.fs.File.stdin().reader(&stdin_buffer);
-const stdin = &stdin_reader.interface;
+pub const stdin = &stdin_reader.interface;
 
 pub const Color = enum {
     // Standard colors
@@ -107,7 +107,7 @@ pub const Theme = struct {
 pub const theme = Theme.init();
 
 // COLOR PRINTING USING THE STRUCT ABOVE
-fn printColored(text: []const u8, fg: Color, bg: ?Color) !void {
+pub fn printColored(text: []const u8, fg: Color, bg: ?Color) !void {
     if (bg) |background| {
         try stdout.print("{s}{s}{s}{s}", .{ background.bg(), fg.fg(), text, Color.reset.fg() });
     } else {
@@ -116,7 +116,7 @@ fn printColored(text: []const u8, fg: Color, bg: ?Color) !void {
 }
 
 // USING COLOR TO PRINT STUFF
-fn printMenuItem(text: []const u8, selected: bool) !void {
+pub fn printMenuItem(text: []const u8, selected: bool) !void {
     if (selected) {
         try printColored("> ", theme.primary, null);
         try printColored(text, theme.text, theme.primary);

@@ -25,3 +25,9 @@ MIT LICENSES OFC
 Here is the LICENSE file
 == LICENSE.md == 
 
+
+### Todo In the app:
+i think that the user should have some settings saved in a js*n file
+so this thing will take some time to implement
+and now am focusing on the main app idea when i finish it ill move to the settings
+and to the js*n settings thing 
