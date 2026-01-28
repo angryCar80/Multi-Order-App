@@ -1,4 +1,13 @@
 const std = @import("std");
+const tasks = @import("tasks.zig");
+
+var stdout_buffer: [1024]u8 = undefined;
+var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+const stdout = &stdout_writer.interface;
+
+var stdin_buffer: [1024]u8 = undefined;
+var stdin_reader = std.fs.File.stdin().reader(&stdin_buffer);
+const stdin = &stdin_reader.interface;
 
 const Color = enum {
     // Standard colors
@@ -94,14 +103,6 @@ const Theme = struct {
     }
 };
 
-var stdout_buffer: [1024]u8 = undefined;
-var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
-const stdout = &stdout_writer.interface;
-
-var stdin_buffer: [1024]u8 = undefined;
-var stdin_reader = std.fs.File.stdin().reader(&stdin_buffer);
-const stdin = &stdin_reader.interface;
-
 const userstate = enum {
     NOTING,
     IDLE,
@@ -191,7 +192,7 @@ pub fn main() !void {
 
                     // Display menu title
                     try printColored("╭─────────────────╮\n", theme.primary, null);
-                    try printColored("│   MAIN MENU    │\n", theme.primary, null);
+                    try printColored("│    MAIN MENU    │\n", theme.primary, null);
                     try printColored("╰─────────────────╯\n\n", theme.primary, null);
 
                     // Display menu items with colors
@@ -231,6 +232,7 @@ pub fn main() !void {
                             try printColored("✓ Opening Note App...\n", theme.success, null);
                             try stdout.flush();
                             std.Thread.sleep(1000 * std.time.ns_per_ms);
+                            try tasks.runTodoApp();
                             try clear();
                         } else if (current_option == 1) {
                             current_option = 0;
@@ -258,7 +260,6 @@ pub fn main() !void {
                     try printColored("╰─────────────────────╯\n\n", theme.accent, null);
                     try printColored("Type 'help' for available commands\n", theme.text_dim, null);
                     try stdout.flush();
-                    user.currentState = userstate.IDLE;
                 } else if (!user.firstTime) {
                     continue;
                 }

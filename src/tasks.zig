@@ -1,4 +1,15 @@
 const std = @import("std");
+const root = @import("root.zig");
+
+var stdout_buffer: [1024]u8 = undefined;
+var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+const stdout = &stdout_writer.interface;
+
+var stdin_buffer: [1024]u8 = undefined;
+var stdin_reader = std.fs.File.stdin().reader(&stdin_buffer);
+const stdin = &stdin_reader.interface;
+
+const options: [5][]const u8 = .{ "Note App", "Todo App", "Search (Not Now)", "Date Persistenc", "Exit" };
 
 pub const Task = struct {
     name: []u8,
@@ -15,7 +26,21 @@ pub const Task = struct {
 };
 
 const Allocator = std.mem.Allocator;
-pub fn runTodoApp() !void {}
+pub fn runTodoApp() !void {
+    root.clear();
+    root.set_RawMode(.on);
+    var running: bool = true;
+    while (running) {
+        const key = root.readKey();
+        // TODO SHOW OPTIONS
+        if (key == 'q') {
+            running = false;
+        } else if (key == 'o') {
+            try stdout.print("TRYING THE TASKS APP", .{});
+            try stdout.flush();
+        }
+    }
+}
 
 // TODO Use it but not now
 // var tasks: std.ArrayList(Task) = .empty;
