@@ -11,7 +11,7 @@ const stdout = root.stdout;
 const stdin = root.stdin;
 const tasks = @import("tasks.zig");
 
-const userstate = enum {
+pub const userstate = enum {
     // NOT USING ANY APPS
     IDLE, // used if the user is not doing anything
     INPUTING, // used if the user is in app shell
@@ -22,7 +22,7 @@ const userstate = enum {
 };
 
 // TODO How to save settings in a file using zig (js*n)
-const User = struct {
+pub const User = struct {
     name: []const u8,
     currentState: userstate,
     firstTime: bool,
@@ -111,6 +111,7 @@ pub fn main() !void {
                         } else {
                             // Escape key pressed
                             choosing = false;
+                            user.currentState = userstate.IDLE;
                             break;
                         }
                     } else if (first_byte == '\r' or first_byte == '\n') {
@@ -133,7 +134,7 @@ pub fn main() !void {
                             try stdout.flush();
                             std.Thread.sleep(1000 * std.time.ns_per_ms);
                             try clear();
-                            try tasks.runTodoApp();
+                            try tasks.runTodoApp(&user);
                         } else if (current_option == 4) { // last element (EXIT)
                             current_option = 0;
                             const msg_menu_height = options.len + 5;
@@ -143,6 +144,7 @@ pub fn main() !void {
                             try stdout.flush();
                             std.Thread.sleep(500 * std.time.ns_per_ms);
                             try clear();
+                            user.currentState = userstate.IDLE;
                             break;
                         }
                     }

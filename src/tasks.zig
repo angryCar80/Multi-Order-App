@@ -1,6 +1,8 @@
 const std = @import("std");
-const root = @import("root.zig");
+
 const layout = @import("layout.zig");
+const main = @import("main.zig");
+const root = @import("root.zig");
 const print = root.printColored;
 const clear = root.clear;
 const setRawMode = root.setRawMode;
@@ -26,13 +28,20 @@ pub const Task = struct {
     }
 };
 
-pub fn runTodoApp() !void {
+pub fn runTodoApp(user: *main.User) !void {
     const gpa = std.heap.page_allocator;
     try clear();
     try setRawMode(.on);
 
     var tasks: std.ArrayList(Task) = .empty;
     var current_option: i16 = 0;
+
+    defer {
+        for (tasks.items) |*task| {
+            task.deinit(gpa);
+        }
+        tasks.deinit(gpa);
+    }
 
     while (true) {
         try clear();
@@ -58,19 +67,19 @@ pub fn runTodoApp() !void {
         }
         try stdout.flush();
 
-        const key = try readKey();
+        const first_byte = try readKey();
 
-        if (key == 'k') {
+        if (first_byte == 'k') {
             // vim: k = up (decrease index)
             if (current_option > 0) {
                 current_option -= 1;
             }
-        } else if (key == 'j') {
+        } else if (first_byte == 'j') {
             // vim: j = down (increase index)
             if (current_option < options.len - 1) {
                 current_option += 1;
             }
-        } else if (key == '\x1B') {
+        } else if (first_byte == '\x1B') {
             // Read the next two bytes for arrow sequence
             const second_byte = try readKey();
             if (second_byte == '[') {
@@ -88,16 +97,16 @@ pub fn runTodoApp() !void {
                 }
             } else {
                 // Escape key pressed - exit todo app
+                user.currentState = main.userstate.IDLE;
                 break;
             }
-        } else if (key == '\r' or key == '\n') {
+        } else if (first_byte == '\r' or first_byte == '\n') {
             if (current_option == 0) {
                 // Add Task
                 const msg_menu_height = options.len + 5;
                 const msg_menu_pos = layout.getBoxPosition(19, msg_menu_height);
                 const msg_y = layout.getMessageY(msg_menu_height, msg_menu_pos.y);
 
-                try clear();
                 try layout.printCenteredMessageColored("✓ Add Task", msg_y, theme.success, null);
                 try stdout.flush();
                 std.Thread.sleep(1000 * std.time.ns_per_ms);
@@ -107,52 +116,95 @@ pub fn runTodoApp() !void {
                 try stdout.flush();
                 try setRawMode(.off);
                 const taskName = try stdin.takeDelimiter('\n');
-                const taskToggled = false;
-                try tasks.append(gpa, .{ .date = 0, .name = taskName.?, .toggled = taskToggled });
+                if (taskName) |name| {
+                    const task_name = try gpa.dupe(u8, name);
+                    const new_task = Task{ .date = 0, .name = task_name, .toggled = false };
+                    try tasks.append(gpa, new_task);
+                }
                 try setRawMode(.on);
             } else if (current_option == 1) {
                 // See Tasks
-                const msg_menu_height = options.len + 5;
-                const msg_menu_pos = layout.getBoxPosition(19, msg_menu_height);
-                const msg_y = layout.getMessageY(msg_menu_height, msg_menu_pos.y);
-
                 try clear();
-                try layout.printCenteredMessageColored("✓ See Tasks", msg_y, theme.success, null);
-                try stdout.flush();
-                std.Thread.sleep(1000 * std.time.ns_per_ms);
 
                 if (tasks.items.len > 0) {
-                    const list_y = layout.getSafeY(msg_y, 2);
-                    try layout.printCenteredMessageColored("Your Tasks:", list_y, theme.accent, null);
-                    for (tasks.items, 0..) |task, i| {
-                        const status = if (task.toggled) "✓ " else "○ ";
-                        const task_text = try std.fmt.allocPrint(gpa, "{s}{s}", .{ status, task.name });
-                        const task_y = layout.getSafeY(list_y + 1 + i, 0);
-                        try layout.printCenteredMessage(task_text, task_y);
-                        gpa.free(task_text);
+                    var task_selection: usize = 0;
+                    var viewing_tasks = true;
+
+                    while (viewing_tasks) {
+                        try clear();
+
+                        // Display header
+                        const header_y = layout.getSafeY(2, 0);
+                        try layout.printCenteredMessageColored("Your Tasks (ESC to exit)", header_y, theme.accent, null);
+
+                        // Display tasks with selection
+                        for (tasks.items, 0..) |task, i| {
+                            const status = if (task.toggled) "✓" else "○";
+                            const selector = if (i == task_selection) "> " else "  ";
+
+                            const task_y = layout.getSafeY(header_y + 2 + i, 0);
+                            const task_text = try std.fmt.allocPrint(gpa, "{s}{s} {s}", .{ selector, status, task.name });
+
+                            if (i == task_selection) {
+                                try layout.printCenteredMessageColored(task_text, task_y, theme.primary, null);
+                            } else {
+                                try layout.printCenteredMessage(task_text, task_y);
+                            }
+
+                            gpa.free(task_text);
+                        }
+
+                        // Display instructions
+                        const instructions_y = layout.getSafeY(header_y + 2 + tasks.items.len + 1, 0);
+                        try layout.printCenteredMessageColored("↑↓ Navigate | Space/Enter Toggle | ESC Exit", instructions_y, theme.text_dim, null);
+
+                        try stdout.flush();
+
+                        // Handle input
+                        const key = try readKey();
+
+                        if (key == 'k') {
+                            // vim: k = up
+                            if (task_selection > 0) task_selection -= 1;
+                        } else if (key == 'j') {
+                            // vim: j = down
+                            if (task_selection < tasks.items.len - 1) task_selection += 1;
+                        } else if (key == '\x1B') {
+                            // Escape sequence
+                            const second_byte = try readKey();
+                            if (second_byte == '[') {
+                                const third_byte = try readKey();
+                                if (third_byte == 'A') {
+                                    // Up arrow
+                                    if (task_selection > 0) task_selection -= 1;
+                                } else if (third_byte == 'B') {
+                                    // Down arrow
+                                    if (task_selection < tasks.items.len - 1) task_selection += 1;
+                                }
+                            } else {
+                                // Escape key pressed
+                                viewing_tasks = false;
+                            }
+                        } else if (key == ' ' or key == '\r' or key == '\n') {
+                            // Toggle task
+                            tasks.items[task_selection].toggled = !tasks.items[task_selection].toggled;
+                        }
                     }
                 } else {
-                    const no_tasks_y = layout.getSafeY(msg_y, 2);
+                    const no_tasks_y = layout.getSafeY(5, 0);
                     try layout.printCenteredMessageColored("No tasks yet!", no_tasks_y, theme.text_dim, null);
+                    try stdout.flush();
+                    std.Thread.sleep(2000 * std.time.ns_per_ms);
                 }
-                try stdout.flush();
-                std.Thread.sleep(3000 * std.time.ns_per_ms);
             } else if (current_option == 2) {
                 // Back
+                // user.currentState = main.userstate.IDLE;
                 break;
             }
-        } else if (key == 'q') {
+        } else if (first_byte == 'q') {
             // Quit todo app
+            user.currentState = main.userstate.IDLE;
             break;
         }
     }
 }
-
-// defer {
-//     for (tasks.items) |task| {
-//         task.deinit(gpa);
-//     }
-//     tasks.deinit(gpa);
-// }
-
-// try tasks.append(gpa, new_task);
