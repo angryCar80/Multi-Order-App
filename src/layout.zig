@@ -94,10 +94,32 @@ pub fn printCenteredMessageColored(text: []const u8, y: usize, fg: root.Color, b
     try printColoredAt(text, getCenterX(text.len), y, fg, bg);
 }
 
+// Print centered message relative to another element
+pub fn printCenteredMessageRelative(text: []const u8, base_y: usize, offset: usize, fg: root.Color, bg: ?root.Color) !void {
+    try printCenteredMessageColored(text, base_y + offset, fg, bg);
+}
+
 // Center a box and return its position
 pub fn getBoxPosition(box_width: usize, box_height: usize) struct { x: usize, y: usize } {
     return .{
         .x = getCenterX(box_width),
         .y = getCenterY(box_height),
     };
+}
+
+// Get safe Y position ensuring it stays within terminal
+pub fn getSafeY(base_y: usize, offset: usize) usize {
+    const screen = getTerminalSize();
+    const result_y = base_y + offset;
+    return if (result_y >= screen.rows - 2) screen.rows - 3 else result_y;
+}
+
+// Calculate Y position for messages below a menu
+pub fn getMessageY(menu_height: usize, menu_y: usize) usize {
+    return getSafeY(menu_y + menu_height, 2);
+}
+
+// Calculate Y position for input prompts
+pub fn getInputY(menu_height: usize, menu_y: usize) usize {
+    return getSafeY(menu_y + menu_height, 3);
 }

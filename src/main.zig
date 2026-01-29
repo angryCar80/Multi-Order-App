@@ -116,20 +116,30 @@ pub fn main() !void {
                     } else if (first_byte == '\r' or first_byte == '\n') {
                         if (current_option == 0) {
                             current_option = 0;
-                            try layout.printCenteredMessageColored("✓ Opening Note App...", layout.getCenterY(1), theme.success, null);
+                            const msg_menu_height = options.len + 5;
+                            const msg_menu_pos = layout.getBoxPosition(19, msg_menu_height);
+                            const msg_y = layout.getMessageY(msg_menu_height, msg_menu_pos.y);
+                            try layout.printCenteredMessageColored("✓ Opening Note App...", msg_y, theme.success, null);
                             try root.stdout.flush();
                             std.Thread.sleep(1000 * std.time.ns_per_ms);
                             try clear();
                         } else if (current_option == 1) {
+                            user.currentState = userstate.TODO;
                             current_option = 0;
-                            try layout.printCenteredMessageColored("✓ Opening Todo App...", layout.getCenterY(1), theme.success, null);
+                            const msg_menu_height = options.len + 5;
+                            const msg_menu_pos = layout.getBoxPosition(19, msg_menu_height);
+                            const msg_y = layout.getMessageY(msg_menu_height, msg_menu_pos.y);
+                            try layout.printCenteredMessageColored("✓ Opening Todo App...", msg_y, theme.success, null);
                             try stdout.flush();
                             std.Thread.sleep(1000 * std.time.ns_per_ms);
                             try clear();
                             try tasks.runTodoApp();
                         } else if (current_option == 4) { // last element (EXIT)
                             current_option = 0;
-                            try layout.printCenteredMessageColored("✓ Exiting application...", layout.getCenterY(1), theme.warning, null);
+                            const msg_menu_height = options.len + 5;
+                            const msg_menu_pos = layout.getBoxPosition(19, msg_menu_height);
+                            const msg_y = layout.getMessageY(msg_menu_height, msg_menu_pos.y);
+                            try layout.printCenteredMessageColored("✓ Exiting application...", msg_y, theme.warning, null);
                             try stdout.flush();
                             std.Thread.sleep(500 * std.time.ns_per_ms);
                             try clear();
@@ -164,15 +174,23 @@ pub fn main() !void {
                     try setRawMode(.on);
 
                     if (std.mem.eql(u8, input, "exit")) {
+                        try clear();
                         try layout.printCenteredMessageColored("✓ Exiting command mode", layout.getCenterY(1), theme.success, null);
                         try stdout.flush();
                         user.currentState = userstate.IDLE;
                     } else if (std.mem.eql(u8, input, "whoami")) {
-                        try layout.printCenteredMessageColored("User: ", layout.getCenterY(1), theme.accent, null);
+                        try clear();
+                        const user_y = layout.getCenterY(2);
+                        try layout.printCenteredMessageColored("User: ", user_y, theme.accent, null);
                         try root.stdout.print("{s}", .{user.name});
                         try stdout.flush();
                     } else if (std.mem.eql(u8, input, "help")) {
-                        const help_y = layout.getCenterY(6);
+                        try clear();
+                        try layout.printColoredAt("╭─────────────────────╮", cmd_pos.x, cmd_pos.y, theme.accent, null);
+                        try layout.printColoredAt("│    COMMAND MODE     │", cmd_pos.x, cmd_pos.y + 1, theme.accent, null);
+                        try layout.printColoredAt("╰─────────────────────╯", cmd_pos.x, cmd_pos.y + 2, theme.accent, null);
+
+                        const help_y = layout.getSafeY(cmd_pos.y + 2, 2);
                         try layout.printCenteredMessageColored("Available commands:", help_y, theme.accent, null);
                         try layout.printCenteredMessage("  whoami - Show current user", help_y + 1);
                         try layout.printCenteredMessage("  exit   - Exit command mode", help_y + 2);
@@ -185,6 +203,7 @@ pub fn main() !void {
                         try layout.printColoredAt("│    COMMAND MODE     │", cmd_pos.x, cmd_pos.y + 1, theme.accent, null);
                         try layout.printColoredAt("╰─────────────────────╯", cmd_pos.x, cmd_pos.y + 2, theme.accent, null);
                     } else {
+                        try clear();
                         const msg_y = layout.getCenterY(3);
                         try layout.printCenteredMessageColored("Unknown command: ", msg_y, theme.error_color, null);
                         try root.stdout.print("{s}", .{input});

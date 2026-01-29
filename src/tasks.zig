@@ -93,11 +93,16 @@ pub fn runTodoApp() !void {
         } else if (key == '\r' or key == '\n') {
             if (current_option == 0) {
                 // Add Task
-                try layout.printCenteredMessageColored("✓ Add Task", layout.getCenterY(1), theme.success, null);
+                const msg_menu_height = options.len + 5;
+                const msg_menu_pos = layout.getBoxPosition(19, msg_menu_height);
+                const msg_y = layout.getMessageY(msg_menu_height, msg_menu_pos.y);
+
+                try clear();
+                try layout.printCenteredMessageColored("✓ Add Task", msg_y, theme.success, null);
                 try stdout.flush();
                 std.Thread.sleep(1000 * std.time.ns_per_ms);
 
-                const input_y = layout.getCenterY(3);
+                const input_y = layout.getInputY(msg_menu_height, msg_menu_pos.y);
                 try layout.printCenteredMessageColored("Enter Task Name: ", input_y, theme.text, null);
                 try stdout.flush();
                 try setRawMode(.off);
@@ -107,21 +112,28 @@ pub fn runTodoApp() !void {
                 try setRawMode(.on);
             } else if (current_option == 1) {
                 // See Tasks
-                try layout.printCenteredMessageColored("✓ See Tasks", layout.getCenterY(1), theme.success, null);
+                const msg_menu_height = options.len + 5;
+                const msg_menu_pos = layout.getBoxPosition(19, msg_menu_height);
+                const msg_y = layout.getMessageY(msg_menu_height, msg_menu_pos.y);
+
+                try clear();
+                try layout.printCenteredMessageColored("✓ See Tasks", msg_y, theme.success, null);
                 try stdout.flush();
                 std.Thread.sleep(1000 * std.time.ns_per_ms);
 
                 if (tasks.items.len > 0) {
-                    const list_y = layout.getCenterY(tasks.items.len + 2);
+                    const list_y = layout.getSafeY(msg_y, 2);
                     try layout.printCenteredMessageColored("Your Tasks:", list_y, theme.accent, null);
                     for (tasks.items, 0..) |task, i| {
                         const status = if (task.toggled) "✓ " else "○ ";
                         const task_text = try std.fmt.allocPrint(gpa, "{s}{s}", .{ status, task.name });
-                        try layout.printCenteredMessage(task_text, list_y + 1 + i);
+                        const task_y = layout.getSafeY(list_y + 1 + i, 0);
+                        try layout.printCenteredMessage(task_text, task_y);
                         gpa.free(task_text);
                     }
                 } else {
-                    try layout.printCenteredMessageColored("No tasks yet!", layout.getCenterY(3), theme.text_dim, null);
+                    const no_tasks_y = layout.getSafeY(msg_y, 2);
+                    try layout.printCenteredMessageColored("No tasks yet!", no_tasks_y, theme.text_dim, null);
                 }
                 try stdout.flush();
                 std.Thread.sleep(3000 * std.time.ns_per_ms);
