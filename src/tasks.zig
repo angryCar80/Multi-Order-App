@@ -12,7 +12,6 @@ const stdout = root.stdout;
 const stdin = root.stdin;
 
 const options: [3][]const u8 = .{ "Add Task", "See Tasks", "Back" };
-const see_tasks: [3][]const u8 = .{ "Toggle Tasks", "Rename Tasks", "Back" };
 
 pub const Task = struct {
     name: []const u8,
@@ -198,7 +197,6 @@ pub fn runTodoApp(user: *main.User) !void {
                 }
             } else if (current_option == 2) {
                 // Back
-                // user.currentState = main.userstate.IDLE;
                 break;
             }
         } else if (first_byte == 'q') {

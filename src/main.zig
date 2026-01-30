@@ -10,6 +10,7 @@ const theme = root.theme;
 const stdout = root.stdout;
 const stdin = root.stdin;
 const tasks = @import("tasks.zig");
+const notes = @import("notes.zig");
 
 pub const userstate = enum {
     // NOT USING ANY APPS
@@ -124,6 +125,7 @@ pub fn main() !void {
                             try root.stdout.flush();
                             std.Thread.sleep(1000 * std.time.ns_per_ms);
                             try clear();
+                            try notes.runNoteApp(&user);
                         } else if (current_option == 1) {
                             user.currentState = userstate.TODO;
                             current_option = 0;
@@ -217,7 +219,7 @@ pub fn main() !void {
                 const help_y = layout.getCenterY(7);
                 try layout.printCenteredMessageColored("Available Commands:", help_y, theme.accent, null);
                 try layout.printCenteredMessage("  C  - Clear screen", help_y + 1);
-                try layout.printCenteredMessage("  i  - Open command shell", help_y + 2);
+                try layout.printCenteredMessage("  i  - Open command shell (Change Settings 'LATER')", help_y + 2);
                 try layout.printCenteredMessage("  o  - Open selection menu", help_y + 3);
                 try layout.printCenteredMessage("  h  - Show this help", help_y + 4);
                 try layout.printCenteredMessage("  q  - Quit application", help_y + 5);
