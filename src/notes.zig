@@ -147,25 +147,24 @@ pub fn runNoteApp(user: *main.User) !void {
                         // Display Notes with selection
                         for (notes.items, 0..) |note, i| {
                             const status_str = @tagName(note.current_status);
-                            const note_y = layout.getSafeY(header_y + 2 + i, 0);
-                            const screen_center = layout.getBoxPosition(50, 1);
+                            const note_y = header_y + 2 + i;
 
                             if (i == note_selection) {
-                                try layout.printColoredAt("> ", screen_center.x - 20, note_y, theme.primary, null);
-                                try layout.printColoredAt(status_str, screen_center.x - 18, note_y, theme.accent, null);
-                                try layout.printColoredAt(" ", screen_center.x - 18 + status_str.len, note_y, theme.text, null);
-                                try layout.printColoredAt(note.title, screen_center.x - 17 + status_str.len, note_y, theme.text, theme.primary);
+                                try layout.printColoredAt("> ", 5, note_y, theme.primary, null);
+                                try layout.printColoredAt(status_str, 8, note_y, theme.accent, null);
+                                try layout.printColoredAt(" ", 8 + status_str.len, note_y, theme.text, null);
+                                try layout.printColoredAt(note.title, 9 + status_str.len, note_y, theme.text, theme.primary);
                             } else {
-                                try layout.printAt("  ", screen_center.x - 20, note_y);
-                                try layout.printAt(status_str, screen_center.x - 18, note_y);
-                                try layout.printAt(" ", screen_center.x - 18 + status_str.len, note_y);
-                                try layout.printAt(note.title, screen_center.x - 17 + status_str.len, note_y);
+                                try layout.printAt("  ", 5, note_y);
+                                try layout.printAt(status_str, 8, note_y);
+                                try layout.printAt(" ", 8 + status_str.len, note_y);
+                                try layout.printAt(note.title, 9 + status_str.len, note_y);
                             }
                         }
 
                         // Display instructions
-                        const instructions_y = layout.getSafeY(header_y + 2 + notes.items.len + 1, 0);
-                        try layout.printCenteredMessageColored("↑↓ Navigate | Space/Enter Toggle | ESC Exit", instructions_y, theme.text_dim, null);
+                        const instructions_y = header_y + 2 + notes.items.len + 1;
+                        try layout.printAt("↑↓ Navigate | Space/Enter Toggle | ESC Exit", 5, instructions_y);
 
                         try stdout.flush();
 
