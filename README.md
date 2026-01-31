@@ -10,28 +10,27 @@ So using only zig
 
 ### Current Features
 now you can go to the todo app section and now you can add todos toggle them, and you can go back to the main screen
-and then choose the notes app and add notes change the status (the notes still needs some work)
-now am working on imporving these two apps and making them more usable and better
-like you can edit tasks or notes
-and the notes displaying would look better
+and then choose the notes app and add notes change the status
+i didnt improve these apps, but i added the search app but didnt test it (Big no)
+and am still thinking of improving the apps
 
 ### to use the app you should:
 #### Download the repo:
 ```
 git clone https://github.com/angryCar80/Multi-Order-App.git
 ```
+
 #### get into the directory
 You can change the files freely cause the app is under the MIT licenes
 and to run it use the
+
 ```
 zig build run
 ```
 
-### LICENSE:
-MIT LICENSES OFC
-Here is the LICENSE file
-== LICENSE.md == 
-
+### Note:
+this app works only in linux and macos, but windows good luck running it
+or just switch to linux
 
 ### Todo In the app:
 i think that the user should have some settings saved in a js*n file
@@ -42,4 +41,4 @@ and to the js*n settings thing
 ## What I Canceled For The App:
 i think that am going to remove the Date Option Cause Its Hard To Make For Me
 and cause i dont know  how to use zig modules
-So yea
+but am comming back to this idea cause i just need to learn more about Zig
