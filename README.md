@@ -8,6 +8,13 @@ cause using C libs gives you that you are writing in C but with some new syntax
 So using only zig
 
 
+### Current Features
+now you can go to the todo app section and now you can add todos toggle them, and you can go back to the main screen
+and then choose the notes app and add notes change the status (the notes still needs some work)
+now am working on imporving these two apps and making them more usable and better
+like you can edit tasks or notes
+and the notes displaying would look better
+
 ### to use the app you should:
 #### Download the repo:
 ```
