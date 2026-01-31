@@ -11,6 +11,7 @@ const stdout = root.stdout;
 const stdin = root.stdin;
 const tasks = @import("tasks.zig");
 const notes = @import("notes.zig");
+const search = @import("search.zig");
 
 pub const userstate = enum {
     // NOT USING ANY APPS
@@ -20,6 +21,7 @@ pub const userstate = enum {
     TODO, // used if the user is in the todo app
     NOTE, // used if the user is in the note app
     DATE, // used if the user is in the date app
+    SEARCH, // used if the user is in the Search app
 };
 
 // TODO How to save settings in a file using zig (js*n)
@@ -137,6 +139,17 @@ pub fn main() !void {
                             std.Thread.sleep(1000 * std.time.ns_per_ms);
                             try clear();
                             try tasks.runTodoApp(&user);
+                        } else if (current_option == 2) {
+                            user.currentState = userstate.SEARCH;
+                            current_option = 0;
+                            const msg_menu_height = options.len + 5;
+                            const msg_menu_pos = layout.getBoxPosition(19, msg_menu_height);
+                            const msg_y = layout.getMessageY(msg_menu_height, msg_menu_pos.y);
+                            try layout.printCenteredMessageColored("✓ Opening Search App...", msg_y, theme.success, null);
+                            try stdout.flush();
+                            std.Thread.sleep(1000 * std.time.ns_per_ms);
+                            try clear();
+                            _ = try search.runSearch();
                         } else if (current_option == 4) { // last element (EXIT)
                             current_option = 0;
                             const msg_menu_height = options.len + 5;

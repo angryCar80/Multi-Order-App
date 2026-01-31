@@ -38,3 +38,8 @@ i think that the user should have some settings saved in a js*n file
 so this thing will take some time to implement
 and now am focusing on the main app idea when i finish it ill move to the settings
 and to the js*n settings thing 
+
+## What I Canceled For The App:
+i think that am going to remove the Date Option Cause Its Hard To Make For Me
+and cause i dont know  how to use zig modules
+So yea
