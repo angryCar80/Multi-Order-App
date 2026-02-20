@@ -10,6 +10,7 @@ const readKey = root.readKey;
 const theme = root.theme;
 const stdout = root.stdout;
 const stdin = root.stdin;
+const save = @import("save.zig");
 
 const options: [3][]const u8 = .{ "Add Task", "See Tasks", "Back" };
 
@@ -119,6 +120,7 @@ pub fn runTodoApp(user: *main.User) !void {
                     const task_name = try gpa.dupe(u8, name);
                     const new_task = Task{ .date = 0, .name = task_name, .toggled = false };
                     try tasks.append(gpa, new_task);
+                    try save.saveTasks(new_task);
                 }
                 try setRawMode(.on);
             } else if (current_option == 1) {

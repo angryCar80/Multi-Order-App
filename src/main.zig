@@ -1,7 +1,8 @@
 const std = @import("std");
 
-const root = @import("root.zig");
 const layout = @import("layout.zig");
+const notes = @import("notes.zig");
+const root = @import("root.zig");
 const print = root.printColored;
 const clear = root.clear;
 const setRawMode = root.setRawMode;
@@ -9,9 +10,8 @@ const readKey = root.readKey;
 const theme = root.theme;
 const stdout = root.stdout;
 const stdin = root.stdin;
-const tasks = @import("tasks.zig");
-const notes = @import("notes.zig");
 const search = @import("search.zig");
+const tasks = @import("tasks.zig");
 
 pub const userstate = enum {
     // NOT USING ANY APPS
@@ -50,7 +50,7 @@ pub fn main() !void {
     var current_option: i16 = 0;
 
     var running: bool = true; // Tracking app status
-    // Simple App Loop
+    // Simple App Loop;
     while (running) {
         const key = try readKey();
         if (user.currentState == userstate.IDLE) {

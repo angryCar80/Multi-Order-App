@@ -152,7 +152,7 @@ pub fn runNoteApp(user: *main.User) !void {
                             if (i == note_selection) {
                                 try layout.printColoredAt("> ", 5, note_y, theme.primary, null);
                                 try layout.printColoredAt(status_str, 8, note_y, theme.accent, null);
-                                try layout.printColoredAt(" ", 8 + status_str.len, note_y, theme.text, null);
+                                try layout.printColoredAt("\n", 8 + status_str.len, note_y, theme.text, null);
                                 try layout.printColoredAt(note.title, 9 + status_str.len, note_y, theme.text, theme.primary);
                             } else {
                                 try layout.printAt("  ", 5, note_y);
